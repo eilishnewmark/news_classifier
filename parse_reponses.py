@@ -7,3 +7,9 @@ def main():
     print(data)
 
 main()
+
+# remove punctuation
+# normalise text
+# tokenise text
+# remove stop tokens?
+# get vocabulary, one hot vectors
