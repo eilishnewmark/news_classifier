@@ -7,7 +7,6 @@ headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleW
 
 tags = ["environment" , "politics", "technology", "science", "society", "football", "food"]
 
-
 for tag in tags:
     i = 3
     from_date = "2023-07-01" # yyyy-mm-dd
@@ -18,7 +17,4 @@ for tag in tags:
     with open(f"./responses/{tag}{i}.json", "w") as f:
         json.dump(response.json(), f)
 
-
-
-    
         
