@@ -1,7 +1,10 @@
 import json
 import os
+import re
+import nemo_text_processing
+from nemo_text_processing.text_normalization.normalize import Normalizer
+from nltk.tokenize import wordpunct_tokenize
 
-# remove punctuation
 # normalise text
 # tokenise text
 # remove stop tokens?
@@ -40,4 +43,32 @@ def save_titles_and_tags():
     return
 
 
-save_titles_and_tags()
+def normalise_titles(infile, outfile):
+    normalizer = Normalizer(input_case='cased', lang='en')
+
+    with open(infile, "r") as f:
+            data = f.readlines()
+
+    remove_authors = [line[:line.find("|")] if line.find("|") else line for line in data]
+    stripped = [line.strip("\n") for line in remove_authors]
+    normalised = normalizer.normalize_list(stripped, punct_post_process=True)
+    
+    with open(outfile, "w") as pf:
+        for title in normalised:
+            pf.write(title + "\n")
+
+def tokenise_titles(infile, outfile):
+    with open(infile, "r") as f:
+            data = f.readlines()
+    
+    stripped = [title.strip("\n") for title in data]
+    tokenised = [wordpunct_tokenize(title) for title in stripped]
+
+    with open(outfile, "w") as pf:
+        for title in tokenised:
+            for word in title:
+                pf.write(word + " ")
+            pf.write("\n")
+
+
+    
