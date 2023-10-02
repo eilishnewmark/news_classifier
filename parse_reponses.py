@@ -9,6 +9,15 @@ from nemo_text_processing.text_normalization.normalize import Normalizer
 # remove stop tokens?
 # get vocabulary, one hot vectors
 
+"""
+Order of files on preprocessing line:
+- responses/*.json
+- tags.txt and titles.txt
+- preprocessed_titles.txt
+- normalised_titles.txt
+- tokenised_titles.txt
+"""
+
 def get_titles_and_tags():
     # tags = ["environment", "politics", "technology", "science", "society", "football", "food"]
 
@@ -69,24 +78,40 @@ def normalise_titles(infile, outfile):
 def tokenise_titles(infile, outfile):
     with open(infile, "r") as f:
             data = f.readlines()
-    
     stripped = [title.strip("\n") for title in data]
+
     punct = "!?.,-:;\"()'…"
 
     tokenised = []
 
+    with open("stop_words.txt", "r") as f:
+         stop_words = f.readlines()
+    stop_words = [word.strip("\n") for word in stop_words]
+
     for title in stripped:
+
+        # replace these special characters with ASCII counterparts
         result = re.sub(r"[‘’]", "'", title)
         result = re.sub(r"–", "-", result)
+        
+        # remove all weird punctuation
         result = re.sub(r'([' + re.escape(punct) + '])', r' \1 ', result)
 
+        # turn tokens into unicode (get rid of accents etc)
         result = unidecode(result)
 
+        # turn ellipses into single token
         result = re.sub(r"\. *\. *\.", "…", result)
 
         # if not approved punctuation, delete
         result = re.sub(rf"[^\w {punct}]", "", result)
 
+        # remove stop words
+        result = result.split()
+        result = [word for word in result if word.lower() not in stop_words]
+        result = " ".join(result)
+
+        # remove multiple spaces
         result = re.sub(" {2,}", " ", result)
 
         tokenised.append(result)
