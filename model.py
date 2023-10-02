@@ -36,3 +36,4 @@ def get_vocabs(title_txtfile, tag_txtfile, title_vocab_outfile, tag_vocab_outfil
 
     return token2idx, tag2idx, vocab_size, tag_vocab_size
 
+get_vocabs("tokenised_titles.txt", "tags.txt", "vocabs/title_vocab.txt", "vocabs/tag_vocab.txt")

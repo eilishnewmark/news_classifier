@@ -7,7 +7,8 @@ by Eilish and David <3
 - Output data to visualise in Tableau (can compare the model accuracies using database gold truth) 
 
 ### Design choices made
-- Only kept defined list of punctuation, deleted other
-- Tokenised punctuation so that contraction words were separated into separate tokens (e.g. "weren ' t")
-- Deleted stop tokens from the vocabulary 
+- If keeping stop tokens: only kept defined list of punctuation, deleted others
+    \> Tokenised punctuation so that contraction words were separated into separate tokens (e.g. "weren ' t")
+- If deleting stop tokens: also delete all punctuation tokens
+
 
