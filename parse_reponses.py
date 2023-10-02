@@ -2,12 +2,21 @@ import json
 import os
 import re
 from unidecode import unidecode
-from nemo_text_processing.text_normalization.normalize import Normalizer
+# from nemo_text_processing.text_normalization.normalize import Normalizer
 
 # normalise text
 # tokenise text
 # remove stop tokens?
 # get vocabulary, one hot vectors
+
+"""
+Order of files on preprocessing line:
+- responses/*.json
+- tags.txt and titles.txt
+- preprocessed_titles.txt
+- normalised_titles.txt
+- tokenised_titles.txt
+"""
 
 def get_titles_and_tags():
     # tags = ["environment", "politics", "technology", "science", "society", "football", "food"]
@@ -66,27 +75,48 @@ def normalise_titles(infile, outfile):
         for title in normalised:
             pf.write(title + "\n")
 
-def tokenise_titles(infile, outfile):
+def tokenise_titles(infile, outfile, remove_all_punctuation=True):
     with open(infile, "r") as f:
             data = f.readlines()
-    
     stripped = [title.strip("\n") for title in data]
-    punct = "!?.,-:;\"()'…"
+
+    if remove_all_punctuation:
+        punct = "" # remove all punctuation
+    else:
+        punct = "!?.,-:;\"()'…"
 
     tokenised = []
 
+    with open("stop_words.txt", "r") as f:
+         stop_words = f.readlines()
+    stop_words = [word.strip("\n") for word in stop_words]
+
     for title in stripped:
+
+        # replace these special characters with ASCII counterparts
         result = re.sub(r"[‘’]", "'", title)
         result = re.sub(r"–", "-", result)
-        result = re.sub(r'([' + re.escape(punct) + '])', r' \1 ', result)
+        
+        if not remove_all_punctuation:
+        # remove all weird punctuation
+            result = re.sub(r'([' + re.escape(punct) + '])', r' \1 ', result)
 
+        # turn tokens into unicode (get rid of accents etc)
         result = unidecode(result)
 
+        # turn ellipses into single token
         result = re.sub(r"\. *\. *\.", "…", result)
 
         # if not approved punctuation, delete
-        result = re.sub(rf"[^\w {punct}]", "", result)
+        result = re.sub(rf"[^\w {punct}]", " ", result)
 
+        # remove stop words
+        if remove_all_punctuation:
+            result = result.split()
+            result = [word for word in result if word.lower() not in stop_words]
+            result = " ".join(result)
+
+        # remove multiple spaces
         result = re.sub(" {2,}", " ", result)
 
         tokenised.append(result)
@@ -102,4 +132,4 @@ def tokenise_titles(infile, outfile):
 # preprocess_titles("titles.txt", "preprocessed_titles.txt")
 # normalise_titles("preprocessed_titles.txt", "normalised_titles.txt")
 
-tokenise_titles("normalised_titles.txt", "tokenised_titles.txt")
+tokenise_titles("normalised_titles.txt", "tokenised_titles_without_punctuation.txt", remove_all_punctuation=True)
