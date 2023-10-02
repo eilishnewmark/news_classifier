@@ -2,7 +2,7 @@ import json
 import os
 import re
 from unidecode import unidecode
-from nemo_text_processing.text_normalization.normalize import Normalizer
+# from nemo_text_processing.text_normalization.normalize import Normalizer
 
 # normalise text
 # tokenise text
@@ -75,12 +75,15 @@ def normalise_titles(infile, outfile):
         for title in normalised:
             pf.write(title + "\n")
 
-def tokenise_titles(infile, outfile):
+def tokenise_titles(infile, outfile, remove_all_punctuation=True):
     with open(infile, "r") as f:
             data = f.readlines()
     stripped = [title.strip("\n") for title in data]
 
-    punct = "!?.,-:;\"()'…"
+    if remove_all_punctuation:
+        punct = "" # remove all punctuation
+    else:
+        punct = "!?.,-:;\"()'…"
 
     tokenised = []
 
@@ -94,8 +97,9 @@ def tokenise_titles(infile, outfile):
         result = re.sub(r"[‘’]", "'", title)
         result = re.sub(r"–", "-", result)
         
+        if not remove_all_punctuation:
         # remove all weird punctuation
-        result = re.sub(r'([' + re.escape(punct) + '])', r' \1 ', result)
+            result = re.sub(r'([' + re.escape(punct) + '])', r' \1 ', result)
 
         # turn tokens into unicode (get rid of accents etc)
         result = unidecode(result)
@@ -104,12 +108,13 @@ def tokenise_titles(infile, outfile):
         result = re.sub(r"\. *\. *\.", "…", result)
 
         # if not approved punctuation, delete
-        result = re.sub(rf"[^\w {punct}]", "", result)
+        result = re.sub(rf"[^\w {punct}]", " ", result)
 
         # remove stop words
-        result = result.split()
-        result = [word for word in result if word.lower() not in stop_words]
-        result = " ".join(result)
+        if remove_all_punctuation:
+            result = result.split()
+            result = [word for word in result if word.lower() not in stop_words]
+            result = " ".join(result)
 
         # remove multiple spaces
         result = re.sub(" {2,}", " ", result)
@@ -127,4 +132,4 @@ def tokenise_titles(infile, outfile):
 # preprocess_titles("titles.txt", "preprocessed_titles.txt")
 # normalise_titles("preprocessed_titles.txt", "normalised_titles.txt")
 
-tokenise_titles("normalised_titles.txt", "tokenised_titles.txt")
+tokenise_titles("normalised_titles.txt", "tokenised_titles_without_punctuation.txt", remove_all_punctuation=True)
