@@ -29,7 +29,6 @@ def get_titles_and_tags():
 
     return titles_and_tags
 
-
 def save_titles_and_tags():
     titles_and_tags = get_titles_and_tags()
 
@@ -41,6 +40,18 @@ def save_titles_and_tags():
     
     return
 
+def preprocess_titles(infile, outfile):
+    """Removes any authors/headings in the title that appear before/after a '|'."""
+    with open(infile, "r") as f:
+            data = f.readlines()
+
+    remove_beginning = [line[line.find("|") + 1:] if (-1 < line.find("|") < len(line)/2) else line for line in data]
+    remove_authors = [line[:line.find("|")] if (line.find("|") > len(line)/2) else line for line in remove_beginning]
+    stripped = [line.strip("\n") for line in remove_authors]
+
+    with open(outfile, "w") as pf:
+        for title in stripped:
+            pf.write(title + "\n")
 
 def normalise_titles(infile, outfile):
     normalizer = Normalizer(input_case='cased', lang='en')
@@ -48,8 +59,7 @@ def normalise_titles(infile, outfile):
     with open(infile, "r") as f:
             data = f.readlines()
 
-    remove_authors = [line[:line.find("|")] if line.find("|") else line for line in data]
-    stripped = [line.strip("\n") for line in remove_authors]
+    stripped = [line.strip("\n") for line in data]
     normalised = normalizer.normalize_list(stripped, punct_post_process=True)
     
     with open(outfile, "w") as pf:
@@ -88,4 +98,8 @@ def tokenise_titles(infile, outfile):
             pf.write("\n")
 
 
-tokenise_titles("normalised_titles.txt", "tokenised_titles.txt")
+
+preprocess_titles("titles.txt", "preprocessed_titles.txt")
+normalise_titles("preprocessed_titles.txt", "normalised_titles.txt")
+
+# tokenise_titles("normalised_titles.txt", "tokenised_titles.txt")
