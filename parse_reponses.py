@@ -1,9 +1,9 @@
 import json
 import os
 import re
-import nemo_text_processing
-from nemo_text_processing.text_normalization.normalize import Normalizer
-from nltk.tokenize import wordpunct_tokenize
+# import nemo_text_processing
+# from nemo_text_processing.text_normalization.normalize import Normalizer
+# from nltk.tokenize import wordpunct_tokenize
 
 # normalise text
 # tokenise text
@@ -62,13 +62,21 @@ def tokenise_titles(infile, outfile):
             data = f.readlines()
     
     stripped = [title.strip("\n") for title in data]
-    tokenised = [wordpunct_tokenize(title) for title in stripped]
+    punct = "!?.,-:;\"()'"
+
+    tokenised = []
+
+    for title in stripped:
+        result = re.sub(r"[‘’]", "'", title)
+        result = re.sub(r'([' + re.escape(punct) + '])', r' \1 ', result)
+        result = re.sub("  ", " ", result)
+        tokenised.append(result)
 
     with open(outfile, "w") as pf:
         for title in tokenised:
             for word in title:
-                pf.write(word + " ")
+                pf.write(word)
             pf.write("\n")
 
 
-    
+tokenise_titles("normalised_titles.txt", "tokenised_titles.txt")
