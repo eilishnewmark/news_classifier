@@ -1,9 +1,8 @@
 import json
 import os
 import re
-# import nemo_text_processing
-# from nemo_text_processing.text_normalization.normalize import Normalizer
-# from nltk.tokenize import wordpunct_tokenize
+from unidecode import unidecode
+from nemo_text_processing.text_normalization.normalize import Normalizer
 
 # normalise text
 # tokenise text
@@ -70,6 +69,7 @@ def tokenise_titles(infile, outfile):
         result = re.sub(r"[‘’]", "'", title)
         result = re.sub(r'([' + re.escape(punct) + '])', r' \1 ', result)
         result = re.sub("  ", " ", result)
+        result = unidecode(result)
         tokenised.append(result)
 
     with open(outfile, "w") as pf:
