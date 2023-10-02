@@ -2,7 +2,7 @@ import json
 import os
 import re
 from unidecode import unidecode
-# from nemo_text_processing.text_normalization.normalize import Normalizer
+from nemo_text_processing.text_normalization.normalize import Normalizer
 
 # normalise text
 # tokenise text
@@ -99,7 +99,7 @@ def tokenise_titles(infile, outfile):
 
 
 
-preprocess_titles("titles.txt", "preprocessed_titles.txt")
-normalise_titles("preprocessed_titles.txt", "normalised_titles.txt")
+# preprocess_titles("titles.txt", "preprocessed_titles.txt")
+# normalise_titles("preprocessed_titles.txt", "normalised_titles.txt")
 
-# tokenise_titles("normalised_titles.txt", "tokenised_titles.txt")
+tokenise_titles("normalised_titles.txt", "tokenised_titles.txt")
