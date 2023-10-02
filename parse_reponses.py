@@ -2,7 +2,7 @@ import json
 import os
 import re
 from unidecode import unidecode
-from nemo_text_processing.text_normalization.normalize import Normalizer
+# from nemo_text_processing.text_normalization.normalize import Normalizer
 
 # normalise text
 # tokenise text
@@ -61,15 +61,24 @@ def tokenise_titles(infile, outfile):
             data = f.readlines()
     
     stripped = [title.strip("\n") for title in data]
-    punct = "!?.,-:;\"()'"
+    punct = "!?.,-:;\"()'…"
 
     tokenised = []
 
     for title in stripped:
         result = re.sub(r"[‘’]", "'", title)
+        result = re.sub(r"–", "-", result)
         result = re.sub(r'([' + re.escape(punct) + '])', r' \1 ', result)
-        result = re.sub("  ", " ", result)
+
         result = unidecode(result)
+
+        result = re.sub(r"\. *\. *\.", "…", result)
+
+        # if not approved punctuation, delete
+        result = re.sub(rf"[^\w {punct}]", "", result)
+
+        result = re.sub(" {2,}", " ", result)
+
         tokenised.append(result)
 
     with open(outfile, "w") as pf:
