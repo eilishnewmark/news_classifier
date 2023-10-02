@@ -1,0 +1,7 @@
+football	200
+society	200
+technology	200
+food	200
+environment	200
+science	200
+politics	200
