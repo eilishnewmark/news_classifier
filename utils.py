@@ -19,8 +19,8 @@ def get_vocabs(titles, tags):
          split_title = title.split()
          for token in split_title:
               all_tokens.append(token)   
-    vocab = list(set(all_tokens))
-    vocab_size = len(vocab)
+    vocab = list(set(all_tokens)) + ["PAD"]
+    vocab_size = len(vocab) + 1 # PAD
 
     # get tag set and size from all tags
     stripped_tags = [tag.strip() for tag in tags]

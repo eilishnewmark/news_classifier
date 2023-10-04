@@ -24,4 +24,18 @@ class FFNN(nn.Module):
         self.softmax = nn.Softmax()
 
     def forward(self, x):
-        pass
+        linear1_out = self.input_linear(x) 
+        non_linear_out = self.non_linear(linear1_out)
+        output_linear_out = self.output_linear(non_linear_out)
+        output_probs = self.softmax(output_linear_out)
+        return output_probs
+
+def compute_loss(output_probs, tag_targets):
+    criterion = nn.CrossEntropyLoss()
+    loss = criterion(output_probs, tag_targets)
+    return loss
+
+
+learning_rate = 0.1
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)  
+
