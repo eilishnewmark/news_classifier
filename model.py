@@ -43,16 +43,17 @@ optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
 
 
-def collate_fn(batch, pad_value):
+def collate_fn(batch, pad_value=None):
 
-    title_lengths = np.array([len(title) for title in batch])
-    longest_title = np.max(title_lengths)
+    title_lengths = np.array([title.title_length for title in batch])
+    longest_title = max(title_lengths)
     # calculate the number of pads required for each title
     no_pads_array = np.abs(title_lengths - longest_title)
 
     padded_batch = []
 
     for title, no_pads in zip(batch, no_pads_array):
-        padded_batch.append(np.pad(title, no_pads, 'constant', constant_values=pad_value))
+        idxs = title.title_idxs
+        padded_batch.append(idxs + no_pads * pad_value)
 
-    return padded_batch
+    return torch.LongTensor(np.array(padded_batch)), longest_title
