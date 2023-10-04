@@ -1,6 +1,7 @@
 from utils import split_data, get_vocabs
 import torch
 import torch.nn as nn
+import numpy as np
 
 def load_data(title_fpath, tag_fpath):
     title_train, title_test, tag_train, tag_test = split_data(title_fpath, tag_fpath)
@@ -39,3 +40,19 @@ def compute_loss(output_probs, tag_targets):
 learning_rate = 0.1
 optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)  
 
+
+
+
+def collate_fn(batch, pad_value):
+
+    title_lengths = np.array([len(title) for title in batch])
+    longest_title = np.max(title_lengths)
+    # calculate the number of pads required for each title
+    no_pads_array = np.abs(title_lengths - longest_title)
+
+    padded_batch = []
+
+    for title, no_pads in zip(batch, no_pads_array):
+        padded_batch.append(np.pad(title, no_pads, 'constant', constant_values=pad_value))
+
+    return padded_batch
