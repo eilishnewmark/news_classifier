@@ -1,5 +1,7 @@
-from collections import Counter
+from collections import Counter, namedtuple
 from sklearn.model_selection import train_test_split
+
+TitleTagObject = namedtuple("TitleTagObject", ['title', 'tag', 'title_length'])
 
 def split_data(title_fpath, tag_fpath):
      with open(title_fpath, "r") as title_data:
