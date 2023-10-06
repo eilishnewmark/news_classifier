@@ -13,11 +13,12 @@ def load_data(title_fpath, tag_fpath):
 
     title_tag_objects = []
     for title, tag in zip(title_train, tag_train):
-        split_title = title.rstrip().split()
+        lowered_title = title.lower()
+        split_title = lowered_title.strip().split()
         title_length = len(split_title)
         title_idxs = np.array([token2idx[token] for token in split_title])
-        tag_idx = tag2idx[tag]
-        title_tag_objects.append(TitleTagObject(title=title_idxs, tag=tag_idx, title_length=title_length))
+        tag_idx = tag2idx[tag.strip()]
+        title_tag_objects.append(TitleTagObject(title_idxs=title_idxs, tag=tag_idx, title_length=title_length))
 
     train_loader = torch.utils.data.DataLoader(dataset=title_tag_objects, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     test_loader = torch.utils.data.DataLoader(dataset=title_test, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
