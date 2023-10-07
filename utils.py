@@ -67,7 +67,6 @@ def get_vocabs(titles, tags):
 
     return token2idx, tag2idx, idx2tag, vocab_size, tag_vocab_size, vocab_counts, tag_counts
 
-
 def compute_loss(output, tag_targets):
     criterion = nn.CrossEntropyLoss()
     loss = criterion(output, tag_targets.long())

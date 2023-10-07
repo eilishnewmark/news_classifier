@@ -4,10 +4,10 @@ import torch
 from tqdm import tqdm
 
 class Train(Data):
-    def __init__(self, batch_size=int, n_iters=int, lr=float, hidden_dim=int):
+    def __init__(self, batch_size=int, epochs=int, lr=float, hidden_dim=int):
         Data.__init__(self, data_fpaths=split_data_fpaths)
         self.batch_size = batch_size
-        self.n_iters = n_iters
+        self.epochs = epochs
         self.lr = lr
         self.hidden_dim = hidden_dim
 
@@ -30,12 +30,10 @@ class Train(Data):
     def run_epoch(self):
         train_loader, test_loader, _ = self.setup_data()
         model, optimizer = self.setup_model()
-        epochs = int(self.n_iters / (len(train_loader) / self.batch_size)) # 1
-        print(f"No. of training titles per batch: {len(train_loader)}")
-        print(f"No. of epochs: {epochs}")
+        print(f"No. of epochs: {self.epochs}")
 
-        iter = 0
-        for epoch in tqdm(range(epochs)):
+        step = 0
+        for epoch in tqdm(range(self.epochs)):
             for titles, tags in train_loader:
                 titles = titles.requires_grad_()
                 optimizer.zero_grad()
@@ -44,26 +42,26 @@ class Train(Data):
                 loss.backward()
                 optimizer.step()
 
-                iter += 1
+                step += 1
 
-                if iter % 100 == 0:
+                if step % 100 == 0:
                     correct = 0
                     total = 0
                     for titles, tags in test_loader:
                         titles = titles.requires_grad_()
                         outputs = model(titles)
                         _, predicted = torch.max(outputs.data, 1)
-                        total = tags.size(0)
-                        correct = (predicted == tags).sum()
+                        total += tags.size(0)
+                        correct += (predicted == tags).sum()
                     
                     accuracy = 100 * correct/total
-                    print(f"Iteration: {iter}, Loss: {loss.item()}, Accuracy: {accuracy}")
+                    print(f"Training step (no. of batches seen): {step}, Loss: {loss.item()}, Accuracy: {accuracy}")
                         
             print(f"Epoch: {epoch}, Loss: {loss}\n")
 
-title_data_fpath = "data/tokenised_titles_without_punctuation.txt"
-tag_data_fpath = "data/tags.txt"
+title_data_fpath = "data/big/tokenised_titles_without_punctuation.txt"
+tag_data_fpath = "data/big/tags.txt"
 split_data_fpaths = {"title_train":"data/split-data/train/titles.txt", "tag_train":"data/split-data/train/tags.txt", "title_test":"data/split-data/test/titles.txt", "tag_test":"data/split-data/test/tags.txt"}
-# split_data(title_data_fpath, tag_data_fpath, output_fpaths=split_data_fpaths)
-train = Train(batch_size=10, n_iters=1120, lr=0.00001, hidden_dim=50)
+split_data(title_data_fpath, tag_data_fpath, output_fpaths=split_data_fpaths)
+train = Train(batch_size=10, epochs=5, lr=0.00001, hidden_dim=50)
 train.run_epoch()
