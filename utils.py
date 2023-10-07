@@ -1,15 +1,40 @@
 from collections import Counter, namedtuple
 from sklearn.model_selection import train_test_split
+import torch.nn as nn
 
-TitleTagObject = namedtuple("TitleTagObject", ['title_idxs', 'tag', 'title_length'])
+TitleTagObject = namedtuple("TitleTagObject", ['title_idxs', 'tag_idx', 'title_length'])
 
-def split_data(title_fpath, tag_fpath):
-     with open(title_fpath, "r") as title_data:
-          with open(tag_fpath, "r") as tag_data:
+def split_data(titles_fpath, tags_fpath, output_fpaths=None):
+     with open(titles_fpath, "r") as title_data:
+          with open(tags_fpath, "r") as tag_data:
                titles = title_data.readlines()
                tags = tag_data.readlines()
      title_train, title_test, tag_train, tag_test = train_test_split(titles, tags, train_size=0.8)
 
+     with open(output_fpaths["title_train"], "w") as train_titles:
+          with open(output_fpaths["tag_train"], "w") as train_tags:
+               for title, tag in zip(title_train, tag_train):
+                    train_titles.write(title)
+                    train_tags.write(tag)
+     with open(output_fpaths["title_test"], "w") as test_titles:
+          with open(output_fpaths["tag_test"], "w") as test_tags:
+               for title, tag in zip(title_test, tag_test):
+                    test_titles.write(title)
+                    test_tags.write(tag)
+     return
+
+def read_in_data(output_fpaths=None):
+     with open(output_fpaths["title_train"], "r") as train_titles:
+          with open(output_fpaths["tag_train"], "r") as train_tags:
+               with open(output_fpaths["title_test"], "r") as test_titles:
+                    with open(output_fpaths["tag_test"], "r") as test_tags:
+                         title_train = train_titles.readlines()
+                         tag_train = train_tags.readlines()
+                         title_test = test_titles.readlines()
+                         tag_test = test_tags.readlines()
+     assert len(title_train) == len(tag_train), "Length of training inputs and targets unequal"
+     assert len(title_test) == len(tag_test), "Length of test inputs and targets unequal"
+     
      return title_train, title_test, tag_train, tag_test
 
 def get_vocabs(titles, tags):
@@ -41,3 +66,9 @@ def get_vocabs(titles, tags):
     idx2tag = {idx:tag for (tag, idx) in tag2idx.items()} 
 
     return token2idx, tag2idx, idx2tag, vocab_size, tag_vocab_size, vocab_counts, tag_counts
+
+
+def compute_loss(output, tag_targets):
+    criterion = nn.CrossEntropyLoss()
+    loss = criterion(output, tag_targets.long())
+    return loss

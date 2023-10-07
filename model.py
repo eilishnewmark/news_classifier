@@ -1,29 +1,47 @@
-from utils import split_data, get_vocabs, TitleTagObject
+from utils import get_vocabs, TitleTagObject, read_in_data
 import torch
 import torch.nn as nn
 import numpy as np
 
-def load_data(title_fpath, tag_fpath):
-    title_train, title_test, tag_train, tag_test = split_data(title_fpath, tag_fpath)
-    token2idx, tag2idx, idx2tag, vocab_size, tag_vocab_size, vocab_counts, tag_counts = get_vocabs(title_train, tag_train)
 
-    batch_size = 32
-    n_iters = 280
-    epochs = int(n_iters / (len(title_train) / batch_size)) # 10
+class Data():
+    def __init__(self, data_fpaths):
+        self.title_train, self.title_test, self.tag_train, self.tag_test = read_in_data(data_fpaths)
 
-    title_tag_objects = []
-    for title, tag in zip(title_train, tag_train):
-        lowered_title = title.lower()
-        split_title = lowered_title.strip().split()
-        title_length = len(split_title)
-        title_idxs = np.array([token2idx[token] for token in split_title])
-        tag_idx = tag2idx[tag.strip()]
-        title_tag_objects.append(TitleTagObject(title_idxs=title_idxs, tag=tag_idx, title_length=title_length))
+    def compile_data(self, mode="train"):
+        token2idx, tag2idx, _, _, _, _, _ = get_vocabs(self.title_train + self.title_test, self.tag_train + self.tag_test)
+        if mode == "train":
+            title_data, tag_data = self.title_train, self.tag_train
+        elif mode == "test":
+            title_data, tag_data = self.title_test, self.tag_test
 
-    train_loader = torch.utils.data.DataLoader(dataset=title_tag_objects, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
-    test_loader = torch.utils.data.DataLoader(dataset=title_test, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
+        title_lengths = []
+        title_tag_objects = []
+        for title, tag in zip(title_data, tag_data):
+            lowered_split_title = title.lower().strip().split()
+            title_lengths.append(len(lowered_split_title))
+            title_idxs = np.array([token2idx[token] for token in lowered_split_title])
+            tag_idx = tag2idx[tag.strip()]
+            title_tag_objects.append(TitleTagObject(title_idxs=title_idxs, tag_idx=tag_idx, title_length=len(lowered_split_title)))
 
-    return title_tag_objects, train_loader, test_loader, token2idx, epochs
+        return title_tag_objects, title_lengths
+    
+    def collate_fn(self, batch):
+        token2idx, _, _, _, _, _, _ = get_vocabs(self.title_train, self.tag_train)
+        _, train_title_lengths = self.compile_data(mode="train")
+        _, test_title_lengths = self.compile_data(mode="test")
+        longest_title = max(train_title_lengths + test_title_lengths)
+        pad_value = int(token2idx['PAD'])
+
+        titles = np.stack([np.pad(
+            title.title_idxs, (0, longest_title - title.title_length), mode='constant', constant_values=pad_value) for title in batch])
+        tags = [int(tag.tag_idx) for tag in batch]
+
+        titles = torch.Tensor(titles)
+        tags = torch.Tensor(tags)
+        tags = torch.Tensor.int(tags)
+
+        return titles, tags
 
 class FFNN(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
@@ -37,23 +55,3 @@ class FFNN(nn.Module):
         non_linear_out = self.non_linear(linear1_out)
         output = self.output_linear(non_linear_out)
         return output
-
-def compute_loss(output, tag_targets):
-    criterion = nn.CrossEntropyLoss()
-    loss = criterion(output, tag_targets)
-    return loss
-
-def collate_fn(batch, pad_value=None):
-
-    title_lengths = np.array([title.title_length for title in batch])
-    longest_title = max(title_lengths)
-    # calculate the number of pads required for each title
-    no_pads_array = np.abs(title_lengths - longest_title)
-
-    padded_batch = []
-
-    for title, no_pads in zip(batch, no_pads_array):
-        idxs = title.title_idxs
-        padded_batch.append(idxs + no_pads * pad_value)
-
-    return torch.LongTensor(np.array(padded_batch)), longest_title
