@@ -1,43 +1,67 @@
-from collections import Counter
+from utils import get_vocabs, TitleTagObject, read_in_data
+import torch
+import torch.nn as nn
+import numpy as np
 
-def get_vocabs(title_txtfile, tag_txtfile, title_vocab_outfile, tag_vocab_outfile):
-    with open(title_txtfile, "r") as titles:
-        with open(tag_txtfile, "r") as tags:
-            title_data = titles.readlines()
-            tag_data = tags.readlines()
+
+class Data():
+    def __init__(self, data_fpaths):
+        self.title_train, self.title_test, self.tag_train, self.tag_test = read_in_data(data_fpaths)
+        self.token2idx, self.tag2idx, self.title_lengths, self.vocabsize, self.tag_vocabsize = get_vocabs(self.title_train, self.tag_train)
+
+    def compile_data(self, mode="train"):
+        if mode == "train":
+            title_tag_objects = []
+            for title, tag in zip(self.title_train, self.tag_train):
+                lowered_split_title = title.lower().strip().split()
+                title_idxs = np.array([self.token2idx[token] for token in lowered_split_title])
+                tag_idx = self.tag2idx[tag.strip()]
+                title_tag_objects.append(TitleTagObject(title_idxs=title_idxs, tag_idx=tag_idx, title_length=len(lowered_split_title)))
+
+            return title_tag_objects
+        
+        elif mode == "test":
+            test_token2idx, _, _, _, _, = get_vocabs(self.title_test, self.tag_test)
+
+            train_vocab = self.token2idx.keys()
+            test_vocab = test_token2idx.keys()
+            unk_tokens = [token for token in test_vocab if token not in train_vocab]
+            print("No. of UNK tokens:", len(unk_tokens))
+
+            title_tag_objects = []
+            for title, tag in zip(self.title_test, self.tag_test):
+                lowered_split_title = title.lower().strip().split()
+                lowered_split_title = [token for token in lowered_split_title if token in train_vocab]
+                title_idxs = np.array([self.token2idx[token] for token in lowered_split_title])
+                tag_idx = self.tag2idx[tag.strip()]
+                title_tag_objects.append(TitleTagObject(title_idxs=title_idxs, tag_idx=tag_idx, title_length=len(lowered_split_title)))
+
+            return title_tag_objects
+
     
-    # get vocab set and size from all titles
-    stripped_lowered_titles = [title.lower().strip() for title in title_data]
-    all_tokens = [title.split() for title in stripped_lowered_titles]
-    vocab = [token for token in all_tokens if token not in vocab]
-    vocab_size = len(vocab)
+    def collate_fn(self, batch):
+        longest_title = max(self.title_lengths)
+        pad_value = -1e9
+        titles = np.stack([np.pad(
+            title.title_idxs, (0, np.abs(longest_title - title.title_length)), mode='constant', constant_values=pad_value) for title in batch])
+        tags = [int(tag.tag_idx) for tag in batch]
 
-    # get tag set and size from all tags
-    stripped_tags = [tag.strip() for tag in tag_data]
-    tag_vocab = [tag for tag in stripped_tags if tag not in tag_vocab]
-    tag_vocab_size = len(tag_vocab)
-    
-    # get sorted dictionary of token and tag counts in the data
-    vocab_counts = Counter(all_tokens).most_common()
-    tag_counts = Counter(stripped_tags).most_common()
+        titles = torch.Tensor(titles)
+        tags = torch.Tensor(tags)
+        tags = torch.Tensor.int(tags)
 
-    # write title and tag vocabs and counts to text files
-    with open(title_vocab_outfile, "w") as title_outfile:
-        with open(tag_vocab_outfile, "w") as tag_outfile:
-            for token, count in vocab_counts.items():
-                title_outfile.write(f"{token}\t{count}")
-                title_outfile.write("\n")
-            for tag, count in tag_counts.items():
-                    tag_outfile.write(f"{tag}\t{count}")
-                    tag_outfile.write("\n")
+        return titles, tags
 
-    # get dictionaries of token/tag to idx mapping for one hot vectors
-    title_indices = [i for i in range(0, vocab_size)]
-    token2idx = {token:idx for (token, idx) in zip(vocab, title_indices)}
-    tag_indices = [i for i in range(0, tag_vocab_size)]
-    tag2idx = {tag:idx for (tag, idx) in zip(tag_vocab, tag_indices)}
-    idx2tag = {idx:tag for (tag, idx) in tag2idx.items()} 
+class FFNN(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super(FFNN, self).__init__()
+        self.input_linear = nn.Linear(input_dim, hidden_dim)
+        torch.nn.init.uniform_(self.input_linear.weight)
+        self.non_linear = nn.Sigmoid()
+        self.output_linear = nn.Linear(input_dim, output_dim)
 
-    return token2idx, tag2idx, idx2tag, vocab_size, tag_vocab_size
-
-get_vocabs("tokenised_titles.txt", "tags.txt", "vocabs/title_vocab.txt", "vocabs/tag_vocab.txt")
+    def forward(self, x):
+        # linear1_out = self.input_linear(x) 
+        # non_linear_out = self.non_linear(linear1_out)
+        output = self.output_linear(x)
+        return output
