@@ -2,7 +2,10 @@ from requests.auth import HTTPBasicAuth
 import requests
 import json
 
-auth = HTTPBasicAuth('apikey', '63581936-8fd7-40f7-ac80-76cb937c59a9')
+with open("api_key.txt", "r") as key:
+     api_key = key.read()
+
+auth = HTTPBasicAuth('apikey', api_key.strip())
 headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
 
 tags = ["environment" , "politics", "football", "food"]

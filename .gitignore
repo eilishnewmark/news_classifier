@@ -9,6 +9,9 @@ __pycache__/
 # json files
 /responses/*.json
 
+# API key txt file
+/api_key.txt
+
 # Distribution / packaging
 .Python
 build/
