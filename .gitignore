@@ -7,7 +7,7 @@ __pycache__/
 *.so
 
 # json files
-responses/*.json
+/responses/*.json
 
 # Distribution / packaging
 .Python
