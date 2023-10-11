@@ -14,22 +14,25 @@ def get_titles_and_tags():
     
     for file in os.listdir(directory):
         filename = os.fsdecode(file)
+        tag = re.search(r"-([a-z]+).json", filename)
         if filename.endswith(".json"):
-
             with open(f"responses/{filename}", "r") as f:
                 data = f.read()
             data = json.loads(data)
-            for article in data['response']['results']:
-                title = article['webTitle']
-                titles_and_tags.append([title, filename[:-6]])
-
+            try:
+                file_data = data['response']['results']
+                for article in file_data:
+                    title = article['webTitle']
+                    titles_and_tags.append([title.rstrip(), tag.group(1)])
+            except:
+                continue
     return titles_and_tags
 
-def save_titles_and_tags():
+def save_titles_and_tags(title_outpath, tags_outpath):
     titles_and_tags = get_titles_and_tags()
-
-    with open("titles.txt", "w+") as tf:
-        with open("tags.txt", "w+") as f:
+    print(len(titles_and_tags))
+    with open(title_outpath, "w+") as tf:
+        with open(tags_outpath, "w+") as f:
             for title, tag in titles_and_tags:
                 f.write(tag + "\n")
                 tf.write(title + "\n")
@@ -84,7 +87,7 @@ def tokenise_titles(infile, outfile, remove_all_punctuation=True):
         result = re.sub(r"–", "-", result)
         
         if not remove_all_punctuation:
-        # remove all weird punctuation
+            # remove all weird punctuation
             result = re.sub(r'([' + re.escape(punct) + '])', r' \1 ', result)
 
         # turn tokens into unicode (get rid of accents etc)
@@ -120,10 +123,10 @@ def main():
     - preprocessed_titles.txt
     - normalised_titles.txt
     - tokenised_titles.txt"""
-    get_titles_and_tags()
-    save_titles_and_tags()
-    preprocess_titles("titles.txt", "preprocessed_titles.txt")
-    normalise_titles("preprocessed_titles.txt", "normalised_titles.txt")
-    tokenise_titles("normalised_titles.txt", "tokenised_titles_without_punctuation.txt", remove_all_punctuation=True)
+    # get_titles_and_tags()
+    # save_titles_and_tags("titles.txt", "tags.txt")
+    preprocess_titles("titles.txt", "preprocessed-titles.txt")
+    normalise_titles("preprocessed-titles.txt", "normalised-titles.txt")
+    tokenise_titles("normalised-titles.txt", "tokenised-titles_without_punc.txt", remove_all_punctuation=True)
 
 main()
