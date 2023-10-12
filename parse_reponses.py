@@ -1,8 +1,11 @@
 import json
 import os
 import re
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
 from unidecode import unidecode
 from nemo_text_processing.text_normalization.normalize import Normalizer
+
 
 
 def get_titles_and_tags():
@@ -72,37 +75,31 @@ def tokenise_titles(infile, outfile, remove_all_punctuation=True):
     if remove_all_punctuation:
         punct = "" # remove all punctuation
     else:
-        punct = "!?.,-:;\"()'…"
+        punct = "!?.,-:;\"()'…[0-9]"
 
     tokenised = []
 
-    with open("data_processing/stop_words.txt", "r") as f:
-         stop_words = f.readlines()
-    stop_words = [word.strip("\n") for word in stop_words]
+    stops = set(stopwords.words('english'))
 
     for title in stripped:
-
+        #1. Remove punctuation 
         # replace these special characters with ASCII counterparts
         result = re.sub(r"[‘’]", "'", title)
         result = re.sub(r"–", "-", result)
-        
+        # turn ellipses into single token
+        result = re.sub(r"\. *\. *\.", "…", result)
         if not remove_all_punctuation:
             # remove all weird punctuation
             result = re.sub(r'([' + re.escape(punct) + '])', r' \1 ', result)
-
         # turn tokens into unicode (get rid of accents etc)
         result = unidecode(result)
-
-        # turn ellipses into single token
-        result = re.sub(r"\. *\. *\.", "…", result)
-
         # if not approved punctuation, delete
         result = re.sub(rf"[^\w {punct}]", " ", result)
 
-        # remove stop words
+        #2. Remove stop words
         if remove_all_punctuation:
-            result = result.split()
-            result = [word for word in result if word.lower() not in stop_words]
+            result = word_tokenize(result)
+            result = [word for word in result if word.lower() not in stops]
             result = " ".join(result)
 
         # remove multiple spaces
@@ -125,8 +122,8 @@ def main():
     - tokenised_titles.txt"""
     # get_titles_and_tags()
     # save_titles_and_tags("titles.txt", "tags.txt")
-    preprocess_titles("titles.txt", "preprocessed-titles.txt")
-    normalise_titles("preprocessed-titles.txt", "normalised-titles.txt")
-    tokenise_titles("normalised-titles.txt", "tokenised-titles_without_punc.txt", remove_all_punctuation=True)
+    # preprocess_titles("titles.txt", "preprocessed-titles.txt")
+    # normalise_titles("preprocessed-titles.txt", "normalised-titles.txt")
+    tokenise_titles("data_processing/normalised-titles.txt", "tokenised-titles_without_punc.txt", remove_all_punctuation=True)
 
 main()
