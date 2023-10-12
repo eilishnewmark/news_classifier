@@ -59,6 +59,6 @@ title_data_fpath = "data/tokenised-titles_without_punc.txt"
 tag_data_fpath = "data/tags.txt"
 split_data_fpaths = {"title_train":"data/split-data/train/titles.txt", "tag_train":"data/split-data/train/tags.txt", "title_test":"data/split-data/test/titles.txt", "tag_test":"data/split-data/test/tags.txt"}
 split_data(title_data_fpath, tag_data_fpath, output_fpaths=split_data_fpaths)
-train = Train(batch_size=10, epochs=50, lr=0.01, hidden_dim=82)
+train = Train(batch_size=20, epochs=30, lr=0.001, hidden_dim=100)
 train.run_epoch()
 

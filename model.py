@@ -8,12 +8,14 @@ class Data():
     def __init__(self, data_fpaths):
         self.title_train, self.title_test, self.tag_train, self.tag_test = read_in_data(data_fpaths)
         self.token2idx, self.tag2idx, self.title_lengths, self.tag_count = get_vocabs(self.title_train, self.tag_train, vocab_dir="train")
+        self.train_vocab = self.token2idx.keys()
 
     def compile_data(self, mode="train"):
         if mode == "train":
             title_tag_objects = []
             for title, tag in zip(self.title_train, self.tag_train):
                 lowered_split_title = title.lower().strip().split()
+                lowered_split_title = [token for token in lowered_split_title if token in self.train_vocab]
                 title_idxs = np.array([self.token2idx[token] for token in lowered_split_title])
                 tag_idx = self.tag2idx[tag.rstrip()]
                 title_tag_objects.append(TitleTagObject(title_idxs=title_idxs, tag_idx=tag_idx, title_length=len(lowered_split_title)))
@@ -23,15 +25,14 @@ class Data():
         elif mode == "test":
             test_token2idx, _, _, _ = get_vocabs(self.title_test, self.tag_test, vocab_dir="test")
 
-            train_vocab = self.token2idx.keys()
             test_vocab = test_token2idx.keys()
-            unk_tokens = [token for token in test_vocab if token not in train_vocab]
+            unk_tokens = [token for token in test_vocab if token not in self.train_vocab]
             print("No. of UNK tokens:", len(unk_tokens))
 
             title_tag_objects = []
             for title, tag in zip(self.title_test, self.tag_test):
                 lowered_split_title = title.lower().strip().split()
-                lowered_split_title = [token for token in lowered_split_title if token in train_vocab]
+                lowered_split_title = [token for token in lowered_split_title if token in self.train_vocab]
                 title_idxs = np.array([self.token2idx[token] for token in lowered_split_title])
                 tag_idx = self.tag2idx[tag.strip()]
                 title_tag_objects.append(TitleTagObject(title_idxs=title_idxs, tag_idx=tag_idx, title_length=len(lowered_split_title)))

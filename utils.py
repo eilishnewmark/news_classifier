@@ -65,11 +65,11 @@ def get_vocabs(titles, tags, vocab_dir=None):
     tag_counts = Counter(stripped_tags)
     
     vocab = list(set(all_tokens))
-    filtered_vocab = [token for token in vocab if vocab_counts[token] > 2]
+    filtered_vocab = [token for token in vocab if vocab_counts[token] > 1]
     vocab_size = len(filtered_vocab)
 
     # get dictionaries of token/tag to idx mapping for one hot vectors
-    token2idx = {token:idx for idx, token in enumerate(vocab)}
+    token2idx = {token:idx for idx, token in enumerate(filtered_vocab)}
     tag2idx = {tag:idx for idx, tag in enumerate(tag_vocab)}
     idx2tag = {idx:tag for (tag, idx) in tag2idx.items()} 
 
