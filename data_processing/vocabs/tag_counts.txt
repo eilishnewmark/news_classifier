@@ -1,4 +1,0 @@
-politics	522
-football	513
-environment	489
-food	456

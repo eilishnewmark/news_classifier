@@ -38,8 +38,13 @@ def read_in_data(output_fpaths=None):
      
      return title_train, title_test, tag_train, tag_test
 
-def get_vocabs(titles, tags):
-    """titles/tags = list of title/tag strings"""
+def get_vocabs(titles, tags, vocab_dir=None):
+    """
+    titles/tags = list of title/tag strings
+    vocab_dir = either 'train', 'test', or None based on whether you want to write vocab \
+     and token counts to data_processing/train or data_processing/test directory and None if you don't \
+     want to write vocab to file
+     """
     # get vocab set and size from all titles
     stripped_lowered_titles = [title.lower().strip() for title in titles]
     all_tokens = []
@@ -48,34 +53,38 @@ def get_vocabs(titles, tags):
          split_title = title.split()
          title_lengths.append(len(split_title))
          for token in split_title:
-              all_tokens.append(token)   
-    vocab = list(set(all_tokens))
-    vocab_size = len(vocab)
-
+              all_tokens.append(token)  
+     
     # get tag set and size from all tags
     stripped_tags = [tag.strip() for tag in tags]
     tag_vocab = list(set(stripped_tags))
-    tag_vocab_size = len(tag_vocab)
-    
+    tag_count = len(tag_vocab)
+
     # get sorted tuple list of token and tag counts in the data
-    vocab_counts = Counter(all_tokens).most_common()
-    tag_counts = Counter(stripped_tags).most_common()
-    with open("data_processing/vocab_counts.txt", "w") as vocab_f:
-          vocab_f.write(f"Total tokens in vocab: {vocab_size}\n")
-          for token, count in vocab_counts:
-               vocab_f.write(f"{token}\t{count}\n")
-    with open("data_processing/tag_counts.txt", "w") as tags_f:
-          for tag, count in tag_counts:
-               tags_f.write(f"{tag}\t{count}\n")
+    vocab_counts = Counter(all_tokens)
+    tag_counts = Counter(stripped_tags)
+    
+    vocab = list(set(all_tokens))
+    filtered_vocab = [token for token in vocab if vocab_counts[token] > 2]
+    vocab_size = len(filtered_vocab)
 
     # get dictionaries of token/tag to idx mapping for one hot vectors
-    title_indices = [i for i in range(0, vocab_size)]
-    token2idx = {token:idx for (token, idx) in zip(vocab, title_indices)}
-    tag_indices = [i for i in range(0, tag_vocab_size)]
-    tag2idx = {tag:idx for (tag, idx) in zip(tag_vocab, tag_indices)}
+    token2idx = {token:idx for idx, token in enumerate(vocab)}
+    tag2idx = {tag:idx for idx, tag in enumerate(tag_vocab)}
     idx2tag = {idx:tag for (tag, idx) in tag2idx.items()} 
 
-    return token2idx, tag2idx, title_lengths, vocab_size, tag_vocab_size
+    if vocab_dir:
+     print(f"Total tokens in {vocab_dir} vocab: {vocab_size}\n")
+     with open(f"data_processing/vocabs/{vocab_dir}/vocab_counts.csv", "w") as vocab_f:
+               vocab_f.write("Token, Count\n")
+               for token, count in vocab_counts.most_common():
+                    vocab_f.write(f"{token},{count}\n")
+     with open(f"data_processing/vocabs/{vocab_dir}/tag_counts.csv", "w") as tags_f:
+               tags_f.write("Token, Count\n")
+               for tag, count in tag_counts.most_common():
+                    tags_f.write(f"{tag},{count}\n")
+
+    return token2idx, tag2idx, title_lengths, tag_count
 
 def compute_loss(output, tag_targets):
     criterion = nn.CrossEntropyLoss()

@@ -19,7 +19,7 @@ class Train(Data):
         return train_loader, test_loader
     
     def setup_model(self):
-        model = FFNN(input_dim=max(self.title_lengths), hidden_dim=self.hidden_dim, output_dim=self.tag_vocabsize)
+        model = FFNN(input_dim=max(self.title_lengths), hidden_dim=self.hidden_dim, output_dim=self.tag_count)
         optimizer = torch.optim.SGD(model.parameters(), lr=self.lr)  
         return model, optimizer
 

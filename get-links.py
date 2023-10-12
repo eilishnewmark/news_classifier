@@ -17,7 +17,7 @@ for tag in tags:
             from_date = f"20{year:02}-{month:02}-01" # yyyy-mm-dd
             to_date = f"201{year}-{month}-30"
             api_key = "63581936-8fd7-40f7-ac80-76cb937c59a9"
-            url = f"https://content.guardianapis.com/search?tag={tag}/{tag}&api-key={api_key}&from-date={from_date}&to-date={to_date}&page-size=50"
+            url = f"https://content.guardianapis.com/search?tag={tag}/{tag}&api-key={api_key.strip()}&from-date={from_date}&to-date={to_date}&page-size=50"
             response = requests.get(url, headers=headers, auth=auth)
             with open(f"./responses/{month}-201{year}-{tag}.json", "w") as f:
                     json.dump(response.json(), f)
