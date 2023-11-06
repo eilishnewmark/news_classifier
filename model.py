@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-
 class Data():
     def __init__(self, data_fpaths):
         self.title_train, self.title_test, self.tag_train, self.tag_test = read_in_data(data_fpaths)
@@ -42,26 +41,39 @@ class Data():
     
     def collate_fn(self, batch):
         longest_title = max(self.title_lengths)
-        pad_value = -1e9
+        pad_value = len(self.train_vocab) + 1
+
         titles = np.stack([np.pad(
             title.title_idxs, (0, np.abs(longest_title - title.title_length)), mode='constant', constant_values=pad_value) for title in batch])
+        # offsets = [len(title) for title in batch]
         tags = [int(tag.tag_idx) for tag in batch]
 
-        titles = torch.Tensor(titles)
+        titles = torch.LongTensor(titles)
+        # offsets = torch.tensor(offsets[:-1]).cumsum(dim=0) # TODO: write documentation
         tags = torch.Tensor(tags)
         tags = torch.Tensor.int(tags)
 
         return titles, tags
 
-class FFNN(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim):
-        super(FFNN, self).__init__()
-        self.input_linear = nn.Linear(input_dim, hidden_dim)
-        self.non_linear = nn.Sigmoid()
-        self.output_linear = nn.Linear(hidden_dim, output_dim)
 
-    def forward(self, x):
-        linear1_out = self.input_linear(x) 
-        non_linear_out = self.non_linear(linear1_out)
-        output = self.output_linear(non_linear_out)
-        return output
+class Model(nn.Module):
+    def __init__(self, vocab_size, embedding_dim, num_tags):
+        super(Model, self).__init__()
+        self.vocab_size = len(vocab_size)
+        self.embedding_dim = embedding_dim
+        self.num_tags = num_tags
+        self.pad_idx = self.vocab_size + 1
+        num_embeddings = self.vocab_size + 2
+        self.embedding_bag = nn.EmbeddingBag(num_embeddings=num_embeddings, embedding_dim=self.embedding_dim, mode='sum', padding_idx=self.pad_idx, sparse=False)
+        self.linear = nn.Linear(self.embedding_dim, self.num_tags)
+        self.init_weights()
+    
+    def init_weights(self):
+        initrange = 0.5
+        self.embedding_bag.weight.data.uniform_(-initrange, initrange)
+        self.linear.weight.data.uniform_(-initrange, initrange)
+        self.linear.bias.data.zero_()
+
+    def forward(self, input, offsets):
+        embeddings = self.embedding_bag(input, offsets)
+        return self.linear(embeddings)
