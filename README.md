@@ -1,7 +1,7 @@
 # News Classifier
 
 ### Plan
-- Extract a database (article text, section/tags) from The Guardian API
+- Extract a database (article text, section/tags) from The Guardian API and get vocab to load data
 - Train an EmbeddingBag classifier with linear output layer (Pytorch) 
 TODO: output test data results to visualise in Tableau for evaluation
 TODO: make a validation data set to use during training for hyperparameter tuning
